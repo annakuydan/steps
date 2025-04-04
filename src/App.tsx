@@ -16,14 +16,16 @@ function App() {
   const handleAdd = () => {
     if (!date || !distance) return;
 
-    const existingEntry = steps.find((entry) => entry.date === date);
+    const distanceValue = parseFloat(distance);
 
-    if (existingEntry) {
+    const existingEntryIndex = steps.findIndex((entry) => entry.date === date);
+
+    if (existingEntryIndex !== -1) {
       // Заменяем значение на новое
       setSteps((prevSteps) =>
-        prevSteps.map((entry) =>
-          entry.date === date
-            ? { ...entry, distance: parseFloat(distance) }
+        prevSteps.map((entry, index) =>
+          index === existingEntryIndex
+            ? { ...entry, distance: entry.distance + distanceValue }
             : entry
         )
       );
@@ -31,14 +33,17 @@ function App() {
       // Добавляем новую запись
       setSteps((prevSteps) => [
         ...prevSteps,
-        { date, distance: parseFloat(distance) },
+        { date, distance: distanceValue},
       ]);
     }
+
+    
 
     // Сбрасываем поля ввода
     setDate("");
     setDistance("");
   };
+  
 
   // Функция для удаления записи
   const handleDelete = (deleteDate: string) => {
