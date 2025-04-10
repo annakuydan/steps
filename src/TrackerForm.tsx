@@ -12,13 +12,13 @@ export default function TrackerForm() {
     date: "",
     distance: 0,
   });
-  const [status, setStatus] = useState<"write" | "edit">("write");
+  const [oldDate, setOldDate] = useState<string>("");
   const handlerSubmit = (evt: FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
-    const existingEntryIndex = steps.findIndex(
-      (entry) => entry.date === form.date
-    );
-    if (status === "write") {
+    if (oldDate === "") {
+      const existingEntryIndex = steps.findIndex(
+        (entry) => entry.date === oldDate
+      );
       if (existingEntryIndex !== -1) {
         setSteps((prevSteps) => {
           const stepsArr = [...prevSteps];
@@ -30,17 +30,20 @@ export default function TrackerForm() {
       } else {
         setSteps((prevSteps: StepEntry[]) =>
           [...prevSteps, form].sort(
-            (a, b) => new Date(a.date) - new Date(b.date)
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
           )
         );
       }
     } else {
       setSteps((prevSteps) => {
+        const existingEntryIndex = steps.findIndex(
+          (entry) => entry.date === oldDate
+        );
         const stepsArr = [...prevSteps];
         stepsArr[existingEntryIndex] = form;
-        return stepsArr.sort((a, b) => new Date(a.date) - new Date(b.date));
+        return stepsArr.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       });
-      setStatus("write");
+      setOldDate("");
     }
 
     setForm({
@@ -101,7 +104,7 @@ export default function TrackerForm() {
                   <button
                     onClick={() => {
                       setForm({ date: entry.date, distance: entry.distance });
-                      setStatus("edit");
+                      setOldDate(entry.date);
                     }}
                   >
                     ✎
