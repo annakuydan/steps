@@ -1,77 +1,87 @@
-import { useState } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 
 // Описание типа для записи
-interface StepEntry {
+type StepEntry = {
   date: string; // Дата в формате "YYYY-MM-DD"
   distance: number; // Пройденное расстояние
-}
+};
 
-function App() {
-  // Состояния
-  const [date, setDate] = useState<string>(""); // Дата
-  const [distance, setDistance] = useState<string>(""); // Километры как строка для ввода
-  const [steps, setSteps] = useState<StepEntry[]>([]); // Массив записей
-
-  // Функция для добавления или редактирования записи
-  const handleAdd = () => {
-    if (!date || !distance) return;
-
-    const distanceValue = parseFloat(distance);
-
-    const existingEntryIndex = steps.findIndex((entry) => entry.date === date);
-
-    if (existingEntryIndex !== -1) {
-      // Заменяем значение на новое
-      setSteps((prevSteps) =>
-        prevSteps.map((entry, index) =>
-          index === existingEntryIndex
-            ? { ...entry, distance: entry.distance + distanceValue }
-            : entry
-        )
-      );
+export default function TrackerForm() {
+  const [steps, setSteps] = useState<StepEntry[]>([]); 
+  const [form, setForm] = useState<StepEntry>({
+    date: "",
+    distance: 0,
+  });
+  const [status, setStatus] = useState<"write" | "edit">("write");
+  const handlerSubmit = (evt: FormEvent<HTMLFormElement>) => {
+    evt.preventDefault();
+    const existingEntryIndex = steps.findIndex(
+      (entry) => entry.date === form.date
+    );
+    if (status === "write") {
+      if (existingEntryIndex !== -1) {
+        setSteps((prevSteps) => {
+          const stepsArr = [...prevSteps];
+          stepsArr[existingEntryIndex].distance =
+            Number(form.distance) +
+            Number(stepsArr[existingEntryIndex].distance);
+          return stepsArr;
+        });
+      } else {
+        setSteps((prevSteps: StepEntry[]) =>
+          [...prevSteps, form].sort(
+            (a, b) => new Date(a.date) - new Date(b.date)
+          )
+        );
+      }
     } else {
-      // Добавляем новую запись
-      setSteps((prevSteps) => [
-        ...prevSteps,
-        { date, distance: distanceValue},
-      ]);
+      setSteps((prevSteps) => {
+        const stepsArr = [...prevSteps];
+        stepsArr[existingEntryIndex] = form;
+        return stepsArr.sort((a, b) => new Date(a.date) - new Date(b.date));
+      });
+      setStatus("write");
     }
 
-    
-
-    // Сбрасываем поля ввода
-    setDate("");
-    setDistance("");
+    setForm({
+      date: "",
+      distance: 0,
+    });
   };
-  
 
-  // Функция для удаления записи
+  const hadlerChangeInputs = (evt: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = evt.target;
+    setForm((prevForm) => ({ ...prevForm, [name]: value }));
+  };
+
   const handleDelete = (deleteDate: string) => {
     setSteps((prevSteps) =>
       prevSteps.filter((entry) => entry.date !== deleteDate)
     );
   };
-
+//форма
   return (
     <div className="app">
       <h1>Учёт тренировок</h1>
-      {/* Форма для ввода */}
-      <div className="form">
+      <form className="form" onSubmit={handlerSubmit}>
         <input
           type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+          value={form.date}
+          onChange={hadlerChangeInputs}
+          name="date"
+          required
         />
         <input
           type="number"
           placeholder="Пройдено км"
-          value={distance}
-          onChange={(e) => setDistance(e.target.value)}
+          value={form.distance}
+          onChange={hadlerChangeInputs}
+          name="distance"
+          required
         />
-        <button onClick={handleAdd}>OK</button>
-      </div>
+        <button type="submit">OK</button>
+      </form>
 
-      {/* Таблица для отображения записей */}
       <table className="steps-table">
         <thead>
           <tr>
@@ -82,19 +92,16 @@ function App() {
         </thead>
         <tbody>
           {steps
-            .sort(
-              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-            ) // Сортировка по дате
             .map((entry) => (
               <tr key={entry.date}>
                 <td>{entry.date}</td>
-                <td>{entry.distance.toFixed(1)}</td>
+                <td>{entry.distance}</td>
                 <td>
                   <button onClick={() => handleDelete(entry.date)}>✘</button>
                   <button
                     onClick={() => {
-                      setDate(entry.date);
-                      setDistance(entry.distance.toString());
+                      setForm({ date: entry.date, distance: entry.distance });
+                      setStatus("edit");
                     }}
                   >
                     ✎
@@ -107,5 +114,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
